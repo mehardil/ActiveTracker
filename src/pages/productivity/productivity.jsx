@@ -33,7 +33,7 @@ export default function ProductivityPage() {
 
   const fetchData = () => {
     setLoading(true);
-    fetch(`http://127.0.0.1:8000/team/teams/${teamId}/activities`)
+    fetch(`http://127.0.0.1:9000/team/teams/${teamId}/activities`)
       .then((res) => res.json())
       .then((json) => {
         setData(json);
