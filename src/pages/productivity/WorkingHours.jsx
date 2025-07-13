@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Sidebar from "../../components/dashboard/Sidebar";
+import Sidebar from "../../components/common/Sidebar";
 import Header from "../../components/common/Header"; // Already imported
 
 const productivityColumns = [

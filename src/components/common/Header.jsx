@@ -1,65 +1,33 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { BarChart3 } from "lucide-react";
 
-const Header = () => {
-  const location = useLocation();
-
-  const navLinks = [
-    { path: '/', label: 'Home' },
-    { path: '/dashboard', label: 'Dashboard' },
-    { path: '/reports', label: 'Reports' },
-    { path: '/team', label: 'Team' },
-  ];
-
+export default function Header({ title = "Activity Log", userInitial = "M" }) {
   return (
-    <header className="bg-white sticky top-0 z-50 shadow-sm border-b">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="h-16 flex items-center justify-between">
-          
-          {/* Logo + Brand */}
-          <div className="flex items-center space-x-3">
-            <img
-              src="/logo.png"
-              alt="Logo"
-              className="h-10 w-10 rounded-full shadow-md object-cover"
-            />
-            <span className="text-2xl font-bold text-blue-700 tracking-wide">
-              ActiveATracker
-            </span>
-          </div>
+    <header className="flex items-center justify-between px-6 py-4 bg-gray-50 border-b">
+      {/* Left Side: Logo + Page Title */}
+      <div className="flex items-center space-x-6">
+        {/* Logo + Brand */}
+        <div className="flex items-center space-x-2 text-gray-900 font-semibold text-lg">
+          <span className="text-xl">⏱️</span>
+          <span className="font-bold">TrackMate</span>
+        </div>
 
-          {/* Navigation Links */}
-          <nav className="hidden md:flex items-center space-x-6">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`text-sm font-medium transition-colors duration-200 ${
-                  location.pathname === link.path
-                    ? 'text-blue-600'
-                    : 'text-gray-600 hover:text-blue-600'
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+        {/* Page Title */}
+        <div className="flex items-center space-x-2 text-gray-800 font-semibold text-lg">
+          <BarChart3 className="w-5 h-5 text-blue-500" />
+          <span>{title}</span>
+        </div>
+      </div>
 
-          {/* User Profile Section */}
-          <div className="flex items-center space-x-3">
-            <img
-              src="/user.png"
-              alt="User avatar"
-              className="h-9 w-9 rounded-full border border-gray-300 shadow-sm object-cover"
-            />
-            <span className="text-sm font-semibold text-gray-800">
-              Mehar Dil
-            </span>
-          </div>
+      {/* Right Side: Upgrade Button + User Initial */}
+      <div className="flex items-center space-x-4">
+        <button className="bg-orange-500 text-white text-sm px-4 py-2 rounded-full hover:bg-orange-600 transition-all">
+          Upgrade - 6 days left
+        </button>
+
+        <div className="w-9 h-9 rounded-full bg-gray-700 text-white flex items-center justify-center font-semibold">
+          {userInitial}
         </div>
       </div>
     </header>
   );
-};
-
-export default Header;
+}

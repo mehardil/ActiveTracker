@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import dayjs from "dayjs";
-import Sidebar from "../../components/dashboard/Sidebar";
+import Sidebar from "../../components/common/Sidebar";
 
 const columnsConfig = [
   { id: "username", label: "Username" },
@@ -22,10 +22,9 @@ export default function ActivityLog() {
   const [endDate, setEndDate] = useState("2025-02-18");
   const [datePreset, setDatePreset] = useState("custom");
   const [startTime, setStartTime] = useState("00:00");
-  
-  
   const [endTime, setEndTime] = useState("12:00");
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
 
   const fetchData = () => {
     setLoading(true);
@@ -33,8 +32,6 @@ export default function ActivityLog() {
       .then((res) => res.json())
       .then((json) => {
         setData(json);
-        console.log("this is updated json")
-        console.log(json)
         const uniqueUsers = new Set(json.map((item) => item.user_id));
         setUserCount(uniqueUsers.size);
         setLoading(false);
@@ -89,16 +86,25 @@ export default function ActivityLog() {
     link.click();
   };
 
+  const filteredData = data;
+  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage
+  );
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
   return (
     <div className="flex bg-gray-50 min-h-screen">
-      {/* Sidebar */}
       <div className="w-60 border-r bg-white shadow-sm">
         <Sidebar />
       </div>
-
-      {/* Main Content */}
       <div className="flex-1 p-6">
-        {/* Top Header */}
         <div className="flex justify-between items-center border-b pb-4 mb-6">
           <h2 className="text-2xl font-bold text-gray-800">📊 Activity Log</h2>
           <div className="flex items-center gap-4">
@@ -111,9 +117,7 @@ export default function ActivityLog() {
           </div>
         </div>
 
-        {/* Filter Row */}
         <div className="flex flex-wrap items-center gap-4 mb-6">
-          {/* Preset Dropdown */}
           <div className="flex items-center gap-2">
             <span className="text-sm">📅 Preset:</span>
             <select
@@ -129,7 +133,6 @@ export default function ActivityLog() {
             </select>
           </div>
 
-          {/* Start Date */}
           <div className="flex items-center gap-2">
             <span className="text-sm">📅 Start:</span>
             <input
@@ -141,7 +144,6 @@ export default function ActivityLog() {
             />
           </div>
 
-          {/* End Date */}
           <div className="flex items-center gap-2">
             <span className="text-sm">📅 End:</span>
             <input
@@ -153,7 +155,6 @@ export default function ActivityLog() {
             />
           </div>
 
-          {/* Team Dropdown */}
           <div className="flex items-center gap-2">
             <span className="text-sm">👥</span>
             <select
@@ -166,7 +167,6 @@ export default function ActivityLog() {
             </select>
           </div>
 
-          {/* Refresh Button */}
           <button
             onClick={fetchData}
             className="bg-gray-500 hover:bg-gray-600 transition text-white px-3 py-1 rounded shadow flex items-center gap-1"
@@ -175,47 +175,35 @@ export default function ActivityLog() {
           </button>
         </div>
 
-
-
-
         <div className="bg-white p-4 rounded-xl shadow mb-6">
-        <h3 className="font-semibold text-lg mb-3 text-gray-700">📈 Single-Day Productivity</h3>
-        <div className="flex flex-wrap items-center gap-4">
-          {/* Start Time */}
-          {/* Start Time */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm">⏰</span>
+          <h3 className="font-semibold text-lg mb-3 text-gray-700">📈 Single-Day Productivity</h3>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">⏰</span>
+              <input
+                type="time"
+                className="border rounded px-2 py-1 bg-white shadow-sm"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+              />
+            </div>
+
             <input
               type="time"
               className="border rounded px-2 py-1 bg-white shadow-sm"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
             />
+
+            <button
+              onClick={exportToCSV}
+              className="bg-green-600 hover:bg-green-700 transition text-white px-3 py-1 rounded shadow"
+            >
+              📤 Export CSV
+            </button>
           </div>
-
-          {/* End Time */}
-          <input
-            type="time"
-            className="border rounded px-2 py-1 bg-white shadow-sm"
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-          />
- 
- 
-
-
-          {/* Export CSV Button */}
-          <button
-            onClick={exportToCSV}
-            className="bg-green-600 hover:bg-green-700 transition text-white px-3 py-1 rounded shadow"
-          >
-            📤 Export CSV
-          </button>
         </div>
-      </div>
 
-
-        {/* Column Toggle */}
         <div className="flex flex-wrap gap-3 mb-4 bg-white p-4 rounded-lg shadow text-sm text-gray-700">
           {columnsConfig.map((col) => (
             <label key={col.id} className="flex items-center gap-1">
@@ -229,48 +217,98 @@ export default function ActivityLog() {
           ))}
         </div>
 
-        {/* Table */}
         <div className="bg-white p-4 rounded-xl shadow">
           {loading ? (
             <div className="text-center py-10 text-gray-500">Loading activity data...</div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full border border-gray-300 text-sm">
-                <thead className="bg-gray-100 text-gray-700">
-                  <tr>
-                    {visibleCols.map((colId) => (
-                      <th key={colId} className="p-3 border">
-                        {columnsConfig.find((c) => c.id === colId).label}
-                      </th>
+            <>
+              <div className="flex justify-between items-center mb-3">
+                <div className="flex items-center gap-2 text-sm">
+                  <label htmlFor="rowsPerPage" className="text-gray-700">
+                    Rows per page:
+                  </label>
+                  <select
+                    id="rowsPerPage"
+                    value={rowsPerPage}
+                    onChange={(e) => {
+                      setRowsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="border border-gray-300 rounded px-2 py-1 bg-white shadow-sm"
+                  >
+                    {[50, 100, 200, 500].map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.length === 0 ? (
+                  </select>
+                </div>
+
+                <div className="text-sm text-gray-500">
+                  Showing {paginatedData.length} of {filteredData.length} rows
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="min-w-full border border-gray-300 text-sm">
+                  <thead className="bg-gray-100 text-gray-700">
                     <tr>
-                      <td colSpan={visibleCols.length} className="text-center p-4 text-gray-500">
-                        No activity data found.
-                      </td>
+                      {visibleCols.map((colId) => (
+                        <th key={colId} className="p-3 border">
+                          {columnsConfig.find((c) => c.id === colId).label}
+                        </th>
+                      ))}
                     </tr>
-                  ) : (
-                    data.map((item, idx) => (
-                      <tr
-                        key={idx}
-                        className={
-                          idx % 2 === 0 ? "bg-white hover:bg-gray-50" : "bg-gray-50 hover:bg-gray-100"
-                        }
-                      >
-                        {visibleCols.map((colId) => (
-                          <td key={colId} className="p-2 border">
-                            {item[colId] ?? "N/A"}
-                          </td>
-                        ))}
+                  </thead>
+                  <tbody>
+                    {paginatedData.length === 0 ? (
+                      <tr>
+                        <td colSpan={visibleCols.length} className="text-center p-4 text-gray-500">
+                          No activity data found.
+                        </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    ) : (
+                      paginatedData.map((item, idx) => (
+                        <tr
+                          key={idx}
+                          className={
+                            idx % 2 === 0 ? "bg-white hover:bg-gray-50" : "bg-gray-50 hover:bg-gray-100"
+                          }
+                        >
+                          {visibleCols.map((colId) => (
+                            <td key={colId} className="p-2 border">
+                              {item[colId] ?? "N/A"}
+                            </td>
+                          ))}
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex justify-between items-center mt-4 text-sm">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50"
+                >
+                  Previous
+                </button>
+
+                <span className="text-gray-600">
+                  Page {currentPage} of {totalPages}
+                </span>
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>
