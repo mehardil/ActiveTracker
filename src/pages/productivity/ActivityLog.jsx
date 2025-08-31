@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import dayjs from "dayjs";
 import Sidebar from "../../components/common/Sidebar";
+import FilterPanel from "../../components/common/FilterPanel";
 
 const columnsConfig = [
   { id: "username", label: "Username" },
@@ -16,24 +18,37 @@ export default function ActivityLog() {
   const [data, setData] = useState([]);
   const [visibleCols, setVisibleCols] = useState(columnsConfig.map((c) => c.id));
   const [loading, setLoading] = useState(true);
-  const [teamId, setTeamId] = useState(12);
   const [userCount, setUserCount] = useState(0);
-  const [startDate, setStartDate] = useState("2025-02-18");
-  const [endDate, setEndDate] = useState("2025-02-18");
-  const [datePreset, setDatePreset] = useState("custom");
+  const [startDate, setStartDate] = useState(dayjs().format("YYYY-MM-DD"));
+  const [endDate, setEndDate] = useState(dayjs().format("YYYY-MM-DD"));
+  const [datePreset, setDatePreset] = useState("today");
   const [startTime, setStartTime] = useState("00:00");
-  const [endTime, setEndTime] = useState("12:00");
+  const [endTime, setEndTime] = useState("23:59");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(50);
+  const [filterType, setFilterType] = useState("user");
+  const [userTeamFilter, setUserTeamFilter] = useState("");
 
   const fetchData = () => {
     setLoading(true);
-    fetch(`http://127.0.0.1:9000/team/teams/${teamId}/activities`)
+    const queryParams = new URLSearchParams();
+
+    if (filterType) queryParams.append("filter_type", filterType);
+    if (userTeamFilter) queryParams.append("user_team", userTeamFilter);
+    if (startDate) queryParams.append("start_date", startDate);
+    if (endDate) queryParams.append("end_date", endDate);
+    if (startTime) queryParams.append("start_time", startTime);
+    if (endTime) queryParams.append("end_time", endTime);
+
+    fetch(`http://127.0.0.1:9900/data/fetch?${queryParams.toString()}`)
       .then((res) => res.json())
       .then((json) => {
-        setData(json);
-        const uniqueUsers = new Set(json.map((item) => item.user_id));
+        const activities = Array.isArray(json) ? json : json.activities || [];
+        setData(activities);
+
+        const uniqueUsers = new Set(activities.map((item) => item.user_id));
         setUserCount(uniqueUsers.size);
+
         setLoading(false);
       })
       .catch((error) => {
@@ -44,7 +59,7 @@ export default function ActivityLog() {
 
   useEffect(() => {
     fetchData();
-  }, [teamId]);
+  }, [filterType, userTeamFilter, startDate, endDate, startTime, endTime]);
 
   useEffect(() => {
     const today = dayjs();
@@ -65,6 +80,15 @@ export default function ActivityLog() {
     }
   }, [datePreset]);
 
+  const handleFilterChange = (filter) => {
+    setFilterType(filter.filter_type);
+    setUserTeamFilter(filter.user_team);
+    setStartDate(filter.start_date);
+    setEndDate(filter.end_date);
+    setStartTime(filter.start_time);
+    setEndTime(filter.end_time);
+  };
+
   const toggleCol = (colId) => {
     setVisibleCols((prev) =>
       prev.includes(colId) ? prev.filter((id) => id !== colId) : [...prev, colId]
@@ -73,11 +97,8 @@ export default function ActivityLog() {
 
   const exportToCSV = () => {
     const header = visibleCols.map((id) => columnsConfig.find((c) => c.id === id).label).join(",");
-    const rows = data.map((row) =>
-      visibleCols.map((col) => `"${row[col] ?? ""}"`).join(",")
-    );
+    const rows = data.map((row) => visibleCols.map((col) => `"${row[col] ?? ""}"`).join(","));
     const csvContent = [header, ...rows].join("\n");
-
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -86,18 +107,25 @@ export default function ActivityLog() {
     link.click();
   };
 
-  const filteredData = data;
+  const filteredData = data.filter((item) => {
+    const isWithinTime =
+      (!startTime || item.start_time >= startTime) &&
+      (!endTime || item.end_time <= endTime);
+
+    if (filterType === "user") {
+      return (userTeamFilter ? item.user_id === Number(userTeamFilter) : true) && isWithinTime;
+    } else if (filterType === "team") {
+      return (userTeamFilter ? item.team_name === userTeamFilter : true) && isWithinTime;
+    }
+
+    return isWithinTime;
+  });
+
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
   const paginatedData = filteredData.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
-
-  const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
 
   return (
     <div className="flex bg-gray-50 min-h-screen">
@@ -106,7 +134,9 @@ export default function ActivityLog() {
       </div>
       <div className="flex-1 p-6">
         <div className="flex justify-between items-center border-b pb-4 mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">📊 Activity Log</h2>
+          <h2 className="text-2xl font-bold text-gray-800">
+            📊 Activity Log <span className="text-base text-gray-500 ml-2">({userCount} users)</span>
+          </h2>
           <div className="flex items-center gap-4">
             <button className="bg-orange-500 hover:bg-orange-600 transition text-white px-4 py-2 rounded-lg text-sm shadow">
               Upgrade - 6 days left
@@ -117,84 +147,23 @@ export default function ActivityLog() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 mb-6">
-          <div className="flex items-center gap-2">
-            <span className="text-sm">📅 Preset:</span>
-            <select
-              value={datePreset}
-              onChange={(e) => setDatePreset(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 shadow-sm bg-white"
-            >
-              <option value="custom">Custom Range</option>
-              <option value="today">Today</option>
-              <option value="yesterday">Yesterday</option>
-              <option value="last_week">Last Week</option>
-              <option value="last_month">Last Month</option>
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-sm">📅 Start:</span>
-            <input
-              type="date"
-              disabled={datePreset !== "custom"}
-              className="border border-gray-300 rounded px-3 py-1 bg-white shadow-sm"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-sm">📅 End:</span>
-            <input
-              type="date"
-              disabled={datePreset !== "custom"}
-              className="border border-gray-300 rounded px-3 py-1 bg-white shadow-sm"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-sm">👥</span>
-            <select
-              value={teamId}
-              onChange={(e) => setTeamId(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 shadow-sm bg-white"
-            >
-              <option value="12">Team 1</option>
-              <option value="15">Team 2</option>
-            </select>
-          </div>
-
-          <button
-            onClick={fetchData}
-            className="bg-gray-500 hover:bg-gray-600 transition text-white px-3 py-1 rounded shadow flex items-center gap-1"
-          >
-            🔄 Refresh
-          </button>
-        </div>
+        <FilterPanel onFilterChange={handleFilterChange} />
 
         <div className="bg-white p-4 rounded-xl shadow mb-6">
           <h3 className="font-semibold text-lg mb-3 text-gray-700">📈 Single-Day Productivity</h3>
           <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm">⏰</span>
-              <input
-                type="time"
-                className="border rounded px-2 py-1 bg-white shadow-sm"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-              />
-            </div>
-
+            <input
+              type="time"
+              className="border rounded px-2 py-1 bg-white shadow-sm"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+            />
             <input
               type="time"
               className="border rounded px-2 py-1 bg-white shadow-sm"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
             />
-
             <button
               onClick={exportToCSV}
               className="bg-green-600 hover:bg-green-700 transition text-white px-3 py-1 rounded shadow"
@@ -222,11 +191,9 @@ export default function ActivityLog() {
             <div className="text-center py-10 text-gray-500">Loading activity data...</div>
           ) : (
             <>
-              <div className="flex justify-between items-center mb-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <label htmlFor="rowsPerPage" className="text-gray-700">
-                    Rows per page:
-                  </label>
+              <div className="flex justify-between items-center mb-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <label htmlFor="rowsPerPage">Rows per page:</label>
                   <select
                     id="rowsPerPage"
                     value={rowsPerPage}
@@ -243,8 +210,7 @@ export default function ActivityLog() {
                     ))}
                   </select>
                 </div>
-
-                <div className="text-sm text-gray-500">
+                <div className="text-gray-500">
                   Showing {paginatedData.length} of {filteredData.length} rows
                 </div>
               </div>
@@ -277,7 +243,7 @@ export default function ActivityLog() {
                         >
                           {visibleCols.map((colId) => (
                             <td key={colId} className="p-2 border">
-                              {item[colId] ?? "N/A"}
+                              {item[colId] !== undefined ? item[colId] : "N/A"}
                             </td>
                           ))}
                         </tr>
@@ -289,7 +255,7 @@ export default function ActivityLog() {
 
               <div className="flex justify-between items-center mt-4 text-sm">
                 <button
-                  onClick={() => handlePageChange(currentPage - 1)}
+                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                   disabled={currentPage === 1}
                   className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50"
                 >
@@ -301,7 +267,7 @@ export default function ActivityLog() {
                 </span>
 
                 <button
-                  onClick={() => handlePageChange(currentPage + 1)}
+                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                   disabled={currentPage === totalPages}
                   className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50"
                 >
