@@ -13,7 +13,8 @@ import {
   MonitorSmartphone,
   BarChart4,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Download
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -24,6 +25,7 @@ const navLinks = [
   { name: "Activity Log", icon: Activity, to: "/activitylog" },
   { name: "Impact", icon: Zap, to: "/impact" },
   { name: "Productivity Graph", icon: BarChart3, to: "/productivitygraph" },
+  { name: "Agent Download", icon: Download, to: "/AgentDownload" },
   { name: "Coach", icon: BrainCircuit, to: "/coach" },
   { name: "Insights", icon: BarChart3, to: "/insight" },
   { name: "Activation", icon: MonitorSmartphone, to: "/activation" },

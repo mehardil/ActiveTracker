@@ -1,8 +1,11 @@
-
 import React, { useState, useEffect } from "react";
 import dayjs from "dayjs";
 import Sidebar from "../../components/common/Sidebar";
 import FilterPanel from "../../components/common/FilterPanel";
+
+const API_URL = "http://127.0.0.1:9900/filter/activities_logs";
+const AUTH_TOKEN =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMTksInJvbGUiOiJhZG1pbiIsIm9yZ19pZCI6NTAsImV4cCI6MTc2MDI2MDQ1M30.OWrK4AnK46zvHZqh7S_zcopXVEths0iijF2DpwghQbw";
 
 const columnsConfig = [
   { id: "username", label: "Username" },
@@ -29,10 +32,11 @@ export default function ActivityLog() {
   const [filterType, setFilterType] = useState("user");
   const [userTeamFilter, setUserTeamFilter] = useState("");
 
+  // === Fetch Data ===
   const fetchData = () => {
     setLoading(true);
-    const queryParams = new URLSearchParams();
 
+    const queryParams = new URLSearchParams();
     if (filterType) queryParams.append("filter_type", filterType);
     if (userTeamFilter) queryParams.append("user_team", userTeamFilter);
     if (startDate) queryParams.append("start_date", startDate);
@@ -40,7 +44,11 @@ export default function ActivityLog() {
     if (startTime) queryParams.append("start_time", startTime);
     if (endTime) queryParams.append("end_time", endTime);
 
-    fetch(`http://127.0.0.1:9900/data/fetch?${queryParams.toString()}`)
+    fetch(`${API_URL}?${queryParams.toString()}`, {
+      headers: {
+        Authorization: `Bearer ${AUTH_TOKEN}`,
+      },
+    })
       .then((res) => res.json())
       .then((json) => {
         const activities = Array.isArray(json) ? json : json.activities || [];
@@ -135,7 +143,8 @@ export default function ActivityLog() {
       <div className="flex-1 p-6">
         <div className="flex justify-between items-center border-b pb-4 mb-6">
           <h2 className="text-2xl font-bold text-gray-800">
-            📊 Activity Log <span className="text-base text-gray-500 ml-2">({userCount} users)</span>
+            📊 Activity Log{" "}
+            <span className="text-base text-gray-500 ml-2">({userCount} users)</span>
           </h2>
           <div className="flex items-center gap-4">
             <button className="bg-orange-500 hover:bg-orange-600 transition text-white px-4 py-2 rounded-lg text-sm shadow">

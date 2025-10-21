@@ -19,6 +19,8 @@ import AppAccess from "./pages/Settings/AppAccess.jsx";
 import Dashboard from "./pages/dashboard/Dashboard.jsx";
 import VerifyOTPPage from "./pages/loginsigin/VerifyOTPPage.jsx";
 import TeamsPage from "./pages/Settings/TeamsPage.jsx";
+import DownloadAgent from "./pages/AgentDownload/DownloadAgent.jsx";
+
 
 function App() {
   return (
@@ -42,6 +44,8 @@ function App() {
           <Route path="/role-access" element={<RoleAccess />} />
           <Route path="/verify-otp" element={<VerifyOTPPage/>}/>
           <Route path="/teams" element={<TeamsPage/>}/>
+          <Route path="/AgentDownload" element={<DownloadAgent/>}/>
+          
           
       </Routes>
     </Router>
