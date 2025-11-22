@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/common/Sidebar";
 import Header from "../../components/common/Header";
 import Footer from "../../components/common/Footer";
+import API_BASE_URL from "../../config/apiConfig";
 
-const API_BASE_URL = "http://127.0.0.1:9900"; // backend URL
+
 
 const RoleAccess = () => {
   const [permissions, setPermissions] = useState([]);

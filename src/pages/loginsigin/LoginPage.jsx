@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Layout from "../../components/Layout";
+import API_BASE_URL from "../../config/apiConfig";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -13,7 +14,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:9900/login/login/", {
+      const response = await fetch(`${API_BASE_URL}/login/login/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

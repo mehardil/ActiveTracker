@@ -7,6 +7,7 @@ import {
 import Sidebar from "../../components/common/Sidebar";
 import Header from "../../components/common/Header";
 import Footer from "../../components/common/Footer";
+import API_BASE_URL from "../../config/apiConfig";
 
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7f50", "#00C49F"];
 
@@ -26,7 +27,7 @@ export default function ProductivityGraphPage() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`http://127.0.0.1:9900/team/teams/${teamId}/activities`)
+    fetch(`${API_BASE_URL}/team/teams/${teamId}/activities`)
       .then((res) => res.json())
       .then((json) => {
         const grouped = json.reduce((acc, item) => {

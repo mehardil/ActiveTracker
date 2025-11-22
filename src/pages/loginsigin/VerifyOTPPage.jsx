@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import API_BASE_URL from "../../config/apiConfig";
+
 
 export default function RegisterAndVerify() {
   const [orgName, setOrgName] = useState('');
@@ -10,7 +12,7 @@ export default function RegisterAndVerify() {
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://127.0.0.1:9900/signup/', {
+      const response = await fetch(`${API_BASE_URL}/signup/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: orgName }),

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/common/Sidebar";
 import Header from "../../components/common/Header";
 import Footer from "../../components/common/Footer";
+import API_BASE_URL from "../../config/apiConfig";
 
 // 🔹 Centralized fetch helper
 const fetchWithErrorHandling = async (url, options = {}) => {
@@ -55,7 +56,7 @@ const TeamsPage = () => {
     try {
       const token = localStorage.getItem("token");
       const data = await fetchWithErrorHandling(
-        "http://127.0.0.1:9900/team/list_teams",
+        `${API_BASE_URL}/team/list_teams`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setTeams(data.teams || []);
@@ -79,8 +80,8 @@ const TeamsPage = () => {
 
   try {
     const url = editTeam
-      ? `http://127.0.0.1:9900/team/update_team/${editTeam.id}` // ✅ attach team id here
-      : "http://127.0.0.1:9900/team/create_team";
+      ? `${API_BASE_URL}/team/update_team/${editTeam.id}` // ✅ attach team id here
+      : `${API_BASE_URL}/team/create_team`;
 
     const body = {
       team_name: teamName,
@@ -114,7 +115,7 @@ const TeamsPage = () => {
     try {
       const token = localStorage.getItem("token");
       await fetchWithErrorHandling(
-        `http://127.0.0.1:9900/team/delete_team/${encodeURIComponent(name)}`,
+        `${API_BASE_URL}/team/delete_team/${encodeURIComponent(name)}`,
         { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }
       );
       showBanner("success", "✅ Deleted");
@@ -131,11 +132,11 @@ const TeamsPage = () => {
     try {
       const token = localStorage.getItem("token");
       const usersData = await fetchWithErrorHandling(
-        "http://127.0.0.1:9900/user/list_agent_organization",
+        `${API_BASE_URL}/user/list_agent_organization`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const membersData = await fetchWithErrorHandling(
-        `http://127.0.0.1:9900/team/team_members/${team.id}`,
+        `${API_BASE_URL}/team/team_members/${team.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setUsers(usersData.users || []);
@@ -148,7 +149,7 @@ const TeamsPage = () => {
   const handleAssignUsers = async () => {
     try {
       const token = localStorage.getItem("token");
-      await fetchWithErrorHandling("http://127.0.0.1:9900/team/assign_teams", {
+      await fetchWithErrorHandling(`${API_BASE_URL}/team/assign_teams`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ team_id: selectedTeamId, user_emails: selectedUsers }),
@@ -165,7 +166,7 @@ const TeamsPage = () => {
     try {
       const token = localStorage.getItem("token");
       const data = await fetchWithErrorHandling(
-        `http://127.0.0.1:9900/team/team_members/${team.id}`,
+        `${API_BASE_URL}/team/team_members/${team.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setTeamUsers(data.members || []);
@@ -180,7 +181,7 @@ const handleRemoveUser = async (email) => {
 
   try {
     const token = localStorage.getItem("token");
-    await fetchWithErrorHandling("http://127.0.0.1:9900/team/remove_user", {
+    await fetchWithErrorHandling(`${API_BASE_URL}/team/remove_user`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",

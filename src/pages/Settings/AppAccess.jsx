@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/common/Sidebar";
 import Header from "../../components/common/Header";
 import Footer from "../../components/common/Footer";
+import API_BASE_URL from "../../config/apiConfig";
 
 const AppAccess = () => {
   const [users, setUsers] = useState([]);
@@ -28,7 +29,7 @@ const AppAccess = () => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://127.0.0.1:9900/user/list_user_organization/", {
+      const res = await fetch(`${API_BASE_URL}/user/list_user_organization/`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -83,7 +84,7 @@ const AppAccess = () => {
     setLoading(true);
     try {
       console.log(payload)
-      const res = await fetch("http://127.0.0.1:9900/user/create_user/", {
+      const res = await fetch(`${API_BASE_URL}/user/create_user/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
