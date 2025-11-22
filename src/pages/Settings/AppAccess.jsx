@@ -77,6 +77,7 @@ const AppAccess = () => {
       password: newPassword,
       department: newDepartment,
       userrole: newRole,
+      
     };
 
     setLoading(true);
