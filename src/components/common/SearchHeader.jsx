@@ -22,19 +22,27 @@ export default function SearchHeader({
   const [searchBy, setSearchBy] = useState("team");
   const token = localStorage.getItem("token");
 
-  // ✅ Format date helper
+  // Format date helper
   const formatDate = (date) => date.toISOString().split("T")[0];
 
-  // ✅ Auto date range based on filter type
+  // Clear opposite filter when switching search type
+  useEffect(() => {
+    if (searchBy === "user") {
+      setSelectedTeam("");
+    } else {
+      setSelectedUser("");
+    }
+  }, [searchBy]);
+
+  // Auto date range based on filter type
   useEffect(() => {
     const today = new Date();
     let start, end;
 
     switch (filterType) {
-      case "today": {
+      case "today":
         start = end = formatDate(today);
         break;
-      }
       case "yesterday": {
         const y = new Date(today);
         y.setDate(today.getDate() - 1);
@@ -42,8 +50,7 @@ export default function SearchHeader({
         break;
       }
       case "week": {
-        // ✅ Previous Week (Monday → Sunday)
-        const currentDay = today.getDay(); // 0=Sun
+        const currentDay = today.getDay();
         const lastSunday = new Date(today);
         lastSunday.setDate(today.getDate() - currentDay);
         const lastMonday = new Date(lastSunday);
@@ -53,7 +60,6 @@ export default function SearchHeader({
         break;
       }
       case "month": {
-        // ✅ Previous Month (1st → last day)
         const firstDayPrevMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
         const lastDayPrevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
         start = formatDate(firstDayPrevMonth);
@@ -70,9 +76,10 @@ export default function SearchHeader({
     setEndDate(end);
   }, [filterType]);
 
-  // ✅ Load users & teams
+  // Load users & teams
   useEffect(() => {
     if (!token) return;
+
     const fetchLists = async () => {
       try {
         const [userRes, teamRes] = await Promise.all([
@@ -83,17 +90,20 @@ export default function SearchHeader({
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
+
         const [userJson, teamJson] = await Promise.all([userRes.json(), teamRes.json()]);
+
         setUsers(userJson.users || []);
         setTeams(teamJson.teams || []);
       } catch (err) {
         console.error("Error loading users/teams:", err);
       }
     };
+
     fetchLists();
   }, [token]);
 
-  // ✅ Apply Filters (with limit + offset)
+  // Apply Filters (only user_id or team_id)
   const applyFilters = async () => {
     try {
       setLoading(true);
@@ -109,16 +119,17 @@ export default function SearchHeader({
         offset,
       });
 
-      if (searchBy === "user" && selectedUser) params.append("user_name", selectedUser);
-      if (searchBy === "team" && selectedTeam) params.append("team_name", selectedTeam);
+      if (searchBy === "user" && selectedUser) params.append("user_id", selectedUser);
+      if (searchBy === "team" && selectedTeam) params.append("team_id", selectedTeam);
 
-      const res = await fetch(`${API_BASE_URL}/filter/activities_logs?${params}`, {
+      const res = await fetch(`${API_BASE_URL}/filter/activities_logs?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const json = await res.json();
 
-      const activities = Array.isArray(json.activities) ? json.activities : json;
-      onDataUpdate(activities, users, teams, json.total_count || 0);
+      const json = await res.json();
+      const activities = json.activities || [];
+
+      onDataUpdate(activities, users, teams, json.total || 0);
     } catch (err) {
       console.error("Error applying filters:", err);
     } finally {
@@ -128,11 +139,11 @@ export default function SearchHeader({
 
   return (
     <div className="flex flex-wrap items-center gap-3 mb-6">
-      {/* 🔹 Filter Type */}
+      {/* Filter Type */}
       <select
         value={filterType}
         onChange={(e) => setFilterType(e.target.value)}
-        className="bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+        className="bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 text-sm"
       >
         <option value="today">Today</option>
         <option value="yesterday">Yesterday</option>
@@ -141,70 +152,71 @@ export default function SearchHeader({
         <option value="custom">Custom</option>
       </select>
 
-      {/* 🔹 Search By */}
+      {/* Search By */}
       <select
         value={searchBy}
         onChange={(e) => setSearchBy(e.target.value)}
-        className="bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+        className="bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 text-sm"
       >
         <option value="team">Search by Team</option>
         <option value="user">Search by User</option>
       </select>
 
-      {/* 🔹 Conditional User/Team Dropdown */}
-      {searchBy === "team" ? (
+      {/* Team Dropdown */}
+      {searchBy === "team" && (
         <select
           value={selectedTeam}
           onChange={(e) => setSelectedTeam(e.target.value)}
-          className="bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 text-sm"
         >
           <option value="">All Teams</option>
-          {teams.map((t, i) => (
-            <option key={i} value={t.name}>
+          {teams.map((t) => (
+            <option key={t.id} value={t.id}>
               {t.name}
             </option>
           ))}
         </select>
-      ) : (
+      )}
+
+      {/* User Dropdown */}
+      {searchBy === "user" && (
         <select
           value={selectedUser}
           onChange={(e) => setSelectedUser(e.target.value)}
-          className="bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 text-sm"
         >
           <option value="">All Users</option>
-          {users.map((u, i) => (
-            <option key={i} value={u.name}>
+          {users.map((u) => (
+            <option key={u.id} value={u.id}>
               {u.name}
             </option>
           ))}
         </select>
       )}
 
-      {/* 🔹 Custom Dates */}
+      {/* Custom Dates */}
       {filterType === "custom" && (
         <>
-          <label className="text-sm font-medium text-gray-600 ml-2">From:</label>
           <input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="border border-gray-300 bg-gray-100 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400"
+            className="border border-gray-300 bg-gray-100 rounded-lg px-3 py-2 text-sm"
           />
-          <label className="text-sm font-medium text-gray-600 ml-2">To:</label>
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="border border-gray-300 bg-gray-100 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400"
+            className="border border-gray-300 bg-gray-100 rounded-lg px-3 py-2 text-sm"
           />
         </>
       )}
 
-      {/* 🔹 Refresh */}
+      {/* Refresh */}
       <button
         onClick={applyFilters}
         disabled={loading}
-        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md font-medium"
+        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
       >
         {loading ? "Loading..." : "Refresh"}
       </button>
